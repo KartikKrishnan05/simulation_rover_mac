@@ -1,0 +1,38 @@
+# ROS 2 Jazzy + Nav2 für macOS (Apple Silicon) über RoboStack.
+# Gazebo Harmonic selbst kommt aus Homebrew (siehe install_gazebo_mac.sh).
+#
+#   pixi install          # Umgebung einrichten
+#   pixi run nav          # Bridge, Lokalisierung, Nav2 und RViz starten
+[workspace]
+name = "simulation_rover_mac"
+channels = ["robostack-jazzy", "conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = "3.12.*"
+ros-jazzy-ros-core = "*"
+ros-jazzy-navigation2 = "*"
+ros-jazzy-nav2-bringup = "*"
+ros-jazzy-slam-toolbox = "*"
+ros-jazzy-ros-gz-bridge = "*"
+ros-jazzy-robot-state-publisher = "*"
+ros-jazzy-rviz2 = "*"
+ros-jazzy-teleop-twist-keyboard = "*"
+ros-jazzy-tf2-ros = "*"
+ros-jazzy-rmw-cyclonedds-cpp = "*"
+ros-jazzy-robot-localization = "*"
+
+[activation.env]
+# CycloneDDS statt Fast DDS: Fast DDS (Shared Memory) verlor unter macOS
+# Nachrichten, sodass Nav2-Server ihren Heartbeat verpassten.
+RMW_IMPLEMENTATION = "rmw_cyclonedds_cpp"
+ROS_DOMAIN_ID = "42"
+# nur Loopback (lo0), Discovery per Unicast – siehe ros/config/cyclonedds.xml
+CYCLONEDDS_URI = "file://$PIXI_PROJECT_ROOT/ros/config/cyclonedds.xml"
+GZ_IP = "127.0.0.1"
+
+[tasks]
+nav = "ros2 launch ros/launch/navigation.launch.py"
+slam = "ros2 launch ros/launch/navigation.launch.py slam:=True"
+goal = "python ros/scripts/send_goal.py"
+teleop = "ros2 run teleop_twist_keyboard teleop_twist_keyboard"

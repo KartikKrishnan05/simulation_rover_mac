@@ -1,0 +1,271 @@
+<?xml version="1.0"?>
+<!--
+  Büroumgebung für den Rover.
+  NICHT direkt bearbeiten: wird von tools/generate_office_world.py aus
+  tools/office_template.sdf erzeugt.
+  Start (macOS):  ./run.sh
+-->
+<sdf version="1.9">
+  <world name="office">
+
+    <!-- 4 ms Schrittweite: reicht für den Rover und senkt die /clock-Rate
+         (ein Takt pro Schritt) für ROS von 1000 auf 250 Hz. -->
+    <physics name="4ms" type="ignored">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+
+    <!-- ============ Tastatursteuerung ============
+         Das GUI-Plugin "KeyPublisher" sendet Tastendrücke auf /keyboard/keypress.
+         Hier werden sie in Fahrbefehle auf /cmd_vel übersetzt.
+         Pfeiltasten oder W/A/S/D, Leertaste = Stopp.
+         Ackermann-Lenkung: Der Rover kann nicht auf der Stelle drehen,
+         links/rechts fahren deshalb eine Kurve mit minimalem Radius.
+         (Vorher einmal in die 3D-Ansicht klicken, damit sie den Fokus hat.) -->
+    <!-- Vorwärts: Pfeil hoch / W -->
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">16777235</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.8}, angular: {z: 0.0}</output>
+    </plugin>
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">87</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.8}, angular: {z: 0.0}</output>
+    </plugin>
+    <!-- Rückwärts: Pfeil runter / S -->
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">16777237</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: -0.5}, angular: {z: 0.0}</output>
+    </plugin>
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">83</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: -0.5}, angular: {z: 0.0}</output>
+    </plugin>
+    <!-- Linkskurve: Pfeil links / A -->
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">16777234</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.5}, angular: {z: 0.6}</output>
+    </plugin>
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">65</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.5}, angular: {z: 0.6}</output>
+    </plugin>
+    <!-- Rechtskurve: Pfeil rechts / D -->
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">16777236</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.5}, angular: {z: -0.6}</output>
+    </plugin>
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">68</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.5}, angular: {z: -0.6}</output>
+    </plugin>
+    <!-- Stopp: Leertaste -->
+    <plugin filename="gz-sim-triggered-publisher-system" name="gz::sim::systems::TriggeredPublisher">
+      <input type="gz.msgs.Int32" topic="/keyboard/keypress">
+        <match field="data">32</match>
+      </input>
+      <output type="gz.msgs.Twist" topic="/cmd_vel">linear: {x: 0.0}, angular: {z: 0.0}</output>
+    </plugin>
+
+    <!-- ============ GUI ============
+         Unter macOS laufen Server und GUI als getrennte Prozesse;
+         die GUI holt sich diese Konfiguration vom Server. -->
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.55 0.55 0.55</ambient_light>
+        <background_color>0.8 0.85 0.9</background_color>
+        <camera_pose>-13 -15 14 0 0.75 0.85</camera_pose>
+        <camera_clip>
+          <near>0.1</near>
+          <far>500</far>
+        </camera_clip>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="MarkerManager" name="Marker manager">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+      <plugin filename="KeyPublisher" name="Key publisher">
+        <gz-gui><property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property><property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property></gz-gui>
+      </plugin>
+
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+      </plugin>
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+
+      <!-- Rechte Seitenleiste -->
+      <plugin filename="Teleop" name="Teleop">
+        <gz-gui>
+          <title>Rover-Steuerung</title>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <topic>/cmd_vel</topic>
+      </plugin>
+      <plugin filename="ImageDisplay" name="Rover-Kamera">
+        <gz-gui>
+          <title>Rover-Kamera</title>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <topic>camera</topic>
+        <topic_picker>false</topic_picker>
+      </plugin>
+      <plugin filename="VisualizeLidar" name="Visualize Lidar">
+        <gz-gui>
+          <title>Lidar</title>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <topic>/lidar</topic>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui><property type="string" key="state">docked_collapsed</property></gz-gui>
+      </plugin>
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui><property type="string" key="state">docked_collapsed</property></gz-gui>
+      </plugin>
+    </gui>
+
+    <!-- ============ Licht & Umgebung ============ -->
+    <scene>
+      <ambient>0.55 0.55 0.55 1</ambient>
+      <background>0.8 0.85 0.9 1</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 30 0 0 0</pose>
+      <diffuse>0.6 0.6 0.58 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 0.4 -0.9</direction>
+    </light>
+
+    <!-- Boden (außerhalb des Gebäudes) -->
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>200 200</size></plane></geometry>
+          <surface>
+            <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>200 200</size></plane></geometry>
+          <material>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.6 0.6 0.6 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ Rover ============ -->
+    <include>
+      <uri>model://rover</uri>
+      <name>rover</name>
+      <pose>1.0 -2.5 0.02 0 0 3.14159</pose>
+    </include>
+
+    <!--@LIGHTS@-->
+
+    <!-- ============ Gebäude ============ -->
+<!--@WALLS@-->
+
+    <!-- ============ Einrichtung ============ -->
+<!--@FURNITURE@-->
+
+  </world>
+</sdf>
