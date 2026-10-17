@@ -56,3 +56,50 @@
   gz_type_name: "gz.msgs.CameraInfo"
   direction: GZ_TO_ROS
   lazy: true
+
+# Tiefenkamera (320×240, gleiches Sichtfeld wie /camera/image_raw)
+- ros_topic_name: "/camera/depth"
+  gz_topic_name: "/depth_camera"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  lazy: true
+
+# ---------------------------------------------------------------- VLM-Szenarien
+# Ground-Truth-Posen aus Gazebo (PosePublisher) – nur für Auswertung,
+# Szenario-Steuerung und die Orakel-Wahrnehmung beim Datensammeln
+- ros_topic_name: "/rover/ground_truth"
+  gz_topic_name: "/model/rover/pose"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/person/ground_truth"
+  gz_topic_name: "/model/person/pose"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/bag/ground_truth"
+  gz_topic_name: "/model/blue_bag/pose"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+# Fahrbefehl für die Person (ros/vlm/person_walker.py)
+- ros_topic_name: "/person/cmd_vel"
+  gz_topic_name: "/model/person/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: ROS_TO_GZ
+
+# Simulation pausieren (während VLM-Aufrufen) und Objekte versetzen
+- service_name: "/world/office/control"
+  ros_type_name: "ros_gz_interfaces/srv/ControlWorld"
+  gz_req_type_name: "gz.msgs.WorldControl"
+  gz_rep_type_name: "gz.msgs.Boolean"
+
+- service_name: "/world/office/set_pose"
+  ros_type_name: "ros_gz_interfaces/srv/SetEntityPose"
+  gz_req_type_name: "gz.msgs.Pose"
+  gz_rep_type_name: "gz.msgs.Boolean"

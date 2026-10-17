@@ -1,0 +1,95 @@
+# Semantische Karte des Büros für den VLM-Agenten (ros/vlm/).
+#
+# Koordinaten in m im Frame "map" (= Gazebo-Weltkoordinaten). Posen sind
+# [x, y, yaw_grad] von base_footprint (Mitte Hinterachse); die Kamera sitzt
+# 0,65 m davor und sieht ±37° (horizontal_fov 1,3 rad).
+#
+#   rooms       Räume mit Beschreibung (geht wörtlich in die VLM-Prompts),
+#               Rechteck [x_min, y_min, x_max, y_max], Anfahrpose für
+#               "fahre zu …" und Aussichtspunkte für die Suche. Der Rover kann
+#               nicht auf der Stelle drehen – jeder Aussichtspunkt hat deshalb
+#               eine Blickrichtung, zusammen decken sie den Raum ab.
+#               via (optional): Zwischenposen vor dem Betreten (ein durchgehender
+#               Pfad per NavigateThroughPoses), damit der Rover gerade durch eine
+#               enge Tür fährt.
+#   bag_spots   mögliche Positionen der blauen Tasche (ros/vlm/collect.py
+#               wählt pro Episode eine)
+#   person_path fester Weg der Person für "folge der Person"
+
+rooms:
+  open_space:
+    description: large open-plan office with desk islands, computer monitors, office chairs and bookshelves
+    rect: [-10.0, -7.0, 3.0, 3.0]
+    approach: [-4.75, -2.7, 180]
+    viewpoints:
+      - [1.28, -2.5, 180]
+      - [-1.5, 1.4, 180]
+      - [-4.75, -2.7, 180]
+  lounge:
+    description: lounge with a blue sofa, a low coffee table and plants, next to the glass wall of the meeting room
+    rect: [3.0, -1.0, 10.0, 3.0]
+    approach: [6.0, 1.0, 0]
+    viewpoints:
+      - [5.6, 0.9, 0]
+  meeting_room:
+    description: meeting room behind a glass wall with a long conference table, many chairs and a wall screen
+    rect: [3.0, -7.0, 10.0, -1.0]
+    # direkt hinter der Tür: im Raum ist kein Platz zum Wenden
+    approach: [4.1, -2.1, 0]
+    # Wendepunkt mitten im Großraum, 3,5 m vor der Tür: Der Rover wendet dort
+    # (von der Startpose: vorwärts, dann rückwärts auf die Pose, Rückwärtszüge
+    # bei x < 0,8) und fährt dann gerade durch die Tür. Ohne ihn plant der
+    # Hybrid-A* das Wendemanöver direkt vor der Tür, und der Rover verkeilt sich
+    # an der Türkante. Die via-Pose muss > 0,7 m vom Start entfernt sein, sonst
+    # verwirft der BT (RemovePassedGoals) sie sofort als "schon erreicht".
+    via:
+      - [-0.5, -2.1, 0]
+    viewpoints:
+      - [4.1, -2.1, 0]
+  office_a:
+    description: small private office in the north-west with one desk, a monitor and a bookshelf
+    rect: [-10.0, 3.0, -4.0, 7.0]
+    approach: [-7.2, 4.0, 90]
+    viewpoints:
+      - [-7.2, 4.0, 90]
+  office_b:
+    description: small private office in the north with one desk, a monitor and a bookshelf
+    rect: [-4.0, 3.0, 2.0, 7.0]
+    approach: [-1.0, 4.0, 90]
+    viewpoints:
+      - [-1.0, 4.0, 90]
+  kitchen:
+    description: kitchen with a long counter, a fridge, a trash bin and a round table with chairs
+    rect: [2.0, 3.0, 10.0, 7.0]
+    approach: [5.5, 4.6, 0]
+    viewpoints:
+      - [4.2, 3.9, 90]
+      - [5.5, 4.6, 0]
+
+# Startpose des Rovers (wie in tools/office_template.sdf / nav2_params.yaml)
+start: [1.28, -2.5, 180]
+
+bag_spots:
+  lounge: [8.6, 0.2]
+  meeting_room: [9.2, -1.7]
+  kitchen: [5.0, 5.9]
+  office_a: [-8.3, 5.9]
+  office_b: [0.2, 5.9]
+  open_space: [-5.3, 1.6]
+
+person_path:
+  speed: 0.3          # m/s – langsamer als der Rover (0,4 m/s)
+  # hier steht die Person, solange niemand ihr folgt (wie in der Welt-Datei);
+  # "reset" stellt sie an den ersten Wegpunkt
+  park: [-9.0, -3.5]
+  # [x, y, Pause in s nach Erreichen]
+  waypoints:
+    - [-2.2, -2.6, 0]
+    - [-4.6, -2.6, 0]
+    - [-4.6, 1.5, 0]
+    - [1.5, 1.5, 0]
+    - [5.2, 0.9, 4]
+    - [6.3, 0.2, 0]
+    - [5.0, -0.4, 0]
+    - [1.5, -0.5, 0]
+    - [0.3, -2.3, 0]

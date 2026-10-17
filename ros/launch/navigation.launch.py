@@ -9,7 +9,10 @@ Startet (Gazebo muss bereits laufen: ./run.sh):
                            (oder slam_toolbox mit slam:=True)
   - Navigation             Planer (Smac Hybrid-A*), Regler (MPPI Ackermann),
                            Behaviors, BT-Navigator, Velocity Smoother, Collision Monitor
-  - RViz                   mit der Nav2-Standardansicht
+  - RViz                   Nav2-Standardansicht + Kamerabild/Marker des VLM-Agenten
+  - VLM-Szenarien          person_walker (Person läuft auf Kommando ihren Weg) und
+                           episode_recorder (Episoden für ein späteres VLA);
+                           der Agent selbst läuft separat: pixi run agent "…"
 
 Die Nodes entsprechen nav2_bringup (Jazzy), werden hier aber direkt gestartet,
 damit die Lifecycle-Manager ohne Bond-Überwachung laufen: In der Simulation
@@ -19,6 +22,7 @@ Nutzung (in der pixi-Umgebung):
   ros2 launch ros/launch/navigation.launch.py              # fertige Karte + AMCL
   ros2 launch ros/launch/navigation.launch.py slam:=True   # Karte live mit slam_toolbox
   ros2 launch ros/launch/navigation.launch.py rviz:=False
+  ros2 launch ros/launch/navigation.launch.py vlm:=False   # ohne Person/Recorder
 """
 import os
 import sys
@@ -66,13 +70,13 @@ def lifecycle_manager(name, nodes):
 
 
 def generate_launch_description():
-    bringup_dir = get_package_share_directory('nav2_bringup')
     slam_toolbox_dir = get_package_share_directory('slam_toolbox')
 
     slam = LaunchConfiguration('slam')
     map_yaml = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
     use_rviz = LaunchConfiguration('rviz')
+    use_vlm = LaunchConfiguration('vlm')
     log_level = LaunchConfiguration('log_level')
 
     params_yaml = RewrittenYaml(
@@ -137,6 +141,8 @@ def generate_launch_description():
             'params_file', default_value=os.path.join(ROS_DIR, 'config', 'nav2_params.yaml'),
             description='Nav2-Parameter'),
         DeclareLaunchArgument('rviz', default_value='True', description='RViz starten'),
+        DeclareLaunchArgument('vlm', default_value='True',
+                              description='person_walker und episode_recorder starten'),
         DeclareLaunchArgument('log_level', default_value='info'),
 
         Node(
@@ -173,6 +179,12 @@ def generate_launch_description():
             output='screen',
         ),
 
+        *[ExecuteProcess(
+            cmd=[sys.executable, os.path.join(ROS_DIR, 'vlm', f'{name}.py'),
+                 '--ros-args', '-p', 'use_sim_time:=true'],
+            name=name, output='screen', condition=IfCondition(use_vlm))
+          for name in ('person_walker', 'episode_recorder')],
+
         localization,
         slam_toolbox,
         *navigation,
@@ -180,7 +192,7 @@ def generate_launch_description():
         Node(
             package='rviz2',
             executable='rviz2',
-            arguments=['-d', os.path.join(bringup_dir, 'rviz', 'nav2_default_view.rviz')],
+            arguments=['-d', os.path.join(ROS_DIR, 'rviz', 'rover_vlm.rviz')],
             parameters=[{'use_sim_time': True}],
             condition=IfCondition(use_rviz),
             output='screen',

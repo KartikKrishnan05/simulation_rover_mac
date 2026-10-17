@@ -100,6 +100,32 @@
         </camera>
       </sensor>
 
+      <!-- Tiefenkamera an derselben Stelle wie die Farbkamera, gleiches
+           Sichtfeld, halbe Auflösung (Pixel (u, v) der Farbkamera = (u/2, v/2)).
+           Damit rechnet ros/vlm Bounding-Boxen des VLM in Kartenpunkte um. -->
+      <sensor name="depth_camera" type="depth_camera">
+        <pose>0.37 0 0.52 0 0.15 0</pose>
+        <always_on>true</always_on>
+        <update_rate>5</update_rate>
+        <visualize>false</visualize>
+        <topic>depth_camera</topic>
+        <gz_frame_id>camera_optical_frame</gz_frame_id>
+        <camera>
+          <!-- sonst landet die Intrinsik auf /camera_info, gemischt mit der Farbkamera -->
+          <camera_info_topic>depth_camera/camera_info</camera_info_topic>
+          <horizontal_fov>1.3</horizontal_fov>
+          <image>
+            <width>320</width>
+            <height>240</height>
+            <format>R_FLOAT32</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>12</far>
+          </clip>
+        </camera>
+      </sensor>
+
       <!-- IMU mit realistischem Rauschen (MEMS-Gyroskop) -->
       <sensor name="imu" type="imu">
         <always_on>true</always_on>

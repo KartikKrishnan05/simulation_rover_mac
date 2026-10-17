@@ -36,3 +36,25 @@ nav = "ros2 launch ros/launch/navigation.launch.py"
 slam = "ros2 launch ros/launch/navigation.launch.py slam:=True"
 goal = "python ros/scripts/send_goal.py"
 teleop = "ros2 run teleop_twist_keyboard teleop_twist_keyboard"
+# VLM-Agent (lokales Modell über Ollama, siehe README)
+vlm-model = "ollama pull qwen3-vl:4b-instruct"
+agent = "python ros/vlm/agent.py"
+collect = "python ros/vlm/collect.py"
+person = "ros2 topic pub --once /person/command std_msgs/msg/String"
+
+# Eigene Umgebung für den LeRobot-Export (torch, datasets …), damit die
+# ROS-Umgebung schlank bleibt:  pixi run -e lerobot to-lerobot
+[feature.lerobot]
+channels = ["conda-forge"]
+
+[feature.lerobot.dependencies]
+python = "3.12.*"
+
+[feature.lerobot.pypi-dependencies]
+lerobot = { version = "==0.6.*", extras = ["dataset"] }
+
+[feature.lerobot.tasks]
+to-lerobot = "python ros/vlm/to_lerobot.py"
+
+[environments]
+lerobot = { features = ["lerobot"], no-default-feature = true }

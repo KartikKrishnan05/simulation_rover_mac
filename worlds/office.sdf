@@ -1535,6 +1535,61 @@
 <visual name="back"><pose>0.000 -0.220 0.800 0.000 0.000 0.000</pose><geometry><box><size>0.460 0.050 0.550</size></box></geometry><material><ambient>0.120 0.120 0.144 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
       </link>
     </model>
+    <model name="blue_bag">
+      <pose>8.6 0.2 0.005 0 0 0.6</pose>
+      <link name="link">
+        <inertial>
+          <pose>0 0 0.2 0 0 0</pose>
+          <mass>3.0</mass>
+          <inertia><ixx>0.05</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.05</iyy><iyz>0</iyz><izz>0.04</izz></inertia>
+        </inertial>
+<collision name="body_col"><pose>0.000 0.000 0.170 0.000 0.000 0.000</pose><geometry><box><size>0.180 0.300 0.340</size></box></geometry></collision>
+<visual name="body"><pose>0.000 0.000 0.170 0.000 0.000 0.000</pose><geometry><box><size>0.180 0.300 0.340</size></box></geometry><material><ambient>0.080 0.240 0.680 1</ambient><diffuse>0.1 0.3 0.85 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<collision name="top_col"><pose>0.000 0.000 0.340 0.000 1.571 0.000</pose><geometry><cylinder><radius>0.150</radius><length>0.180</length></cylinder></geometry></collision>
+<visual name="top"><pose>0.000 0.000 0.340 0.000 1.571 0.000</pose><geometry><cylinder><radius>0.150</radius><length>0.180</length></cylinder></geometry><material><ambient>0.080 0.240 0.680 1</ambient><diffuse>0.1 0.3 0.85 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="pocket"><pose>0.115 0.000 0.130 0.000 0.000 0.000</pose><geometry><box><size>0.060 0.240 0.180</size></box></geometry><material><ambient>0.040 0.136 0.440 1</ambient><diffuse>0.05 0.17 0.55 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="pocket_top"><pose>0.115 0.000 0.220 0.000 1.571 0.000</pose><geometry><cylinder><radius>0.120</radius><length>0.060</length></cylinder></geometry><material><ambient>0.040 0.136 0.440 1</ambient><diffuse>0.05 0.17 0.55 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="zipper"><pose>0.000 0.000 0.470 0.000 0.000 0.000</pose><geometry><box><size>0.185 0.012 0.012</size></box></geometry><material><ambient>0.600 0.600 0.600 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="handle"><pose>-0.020 0.000 0.510 0.000 0.000 0.000</pose><geometry><box><size>0.030 0.100 0.025</size></box></geometry><material><ambient>0.040 0.040 0.056 1</ambient><diffuse>0.05 0.05 0.07 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="strap-1"><pose>-0.100 -0.080 0.250 0.000 0.000 0.000</pose><geometry><box><size>0.025 0.055 0.380</size></box></geometry><material><ambient>0.040 0.040 0.056 1</ambient><diffuse>0.05 0.05 0.07 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+<visual name="strap1"><pose>-0.100 0.080 0.250 0.000 0.000 0.000</pose><geometry><box><size>0.025 0.055 0.380</size></box></geometry><material><ambient>0.040 0.040 0.056 1</ambient><diffuse>0.05 0.05 0.07 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>false</publish_link_pose>
+        <publish_model_pose>true</publish_model_pose>
+        <use_pose_vector_msg>true</use_pose_vector_msg>
+        <update_frequency>10</update_frequency>
+      </plugin>
+    </model>
+    <model name="person">
+      <pose>-9.0 -3.5 0.01 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <pose>0 0 0.9 0 0 0</pose>
+          <mass>70.0</mass>
+          <inertia><ixx>20</ixx><ixy>0</ixy><ixz>0</ixz><iyy>20</iyy><iyz>0</iyz><izz>4</izz></inertia>
+        </inertial>
+        <gravity>false</gravity>
+        <collision name="body">
+          <pose>0 0 0.88 0 0 0</pose>
+          <geometry><cylinder><radius>0.220</radius><length>1.720</length></cylinder></geometry>
+          <surface><friction><ode><mu>0</mu><mu2>0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 -0.01 0 0 1.5707963267948966</pose>
+          <geometry><mesh><uri>https://fuel.gazebosim.org/1.0/openrobotics/models/walking person/3/files/meshes/walking.dae</uri></mesh></geometry>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+        <topic>/model/person/cmd_vel</topic>
+      </plugin>
+      <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>false</publish_link_pose>
+        <publish_model_pose>true</publish_model_pose>
+        <use_pose_vector_msg>true</use_pose_vector_msg>
+        <update_frequency>10</update_frequency>
+      </plugin>
+    </model>
 
   </world>
 </sdf>

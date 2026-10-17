@@ -358,6 +358,97 @@ def furniture():
     return s
 
 
+# ---------------------------------------------------------------- Szenario-Objekte
+# Tasche und Person stehen NICHT in der Nav2-Karte: Sie werden pro Episode
+# verschoben (Service /world/office/set_pose) bzw. laufen herum. Die Rover
+# sehen sie über Lidar und Kamera. Startpositionen und Pfade stehen in
+# ros/config/semantic_map.yaml.
+BAG_START = (8.6, 0.2)       # = bag_spots.lounge in semantic_map.yaml
+PERSON_PARK = (-9.0, -3.5)   # = person_path.park (abseits der Fahrwege)
+
+# Fuel-Modell "Walking person" (OpenRobotics, CC0); wird beim ersten Start
+# von Gazebo heruntergeladen und unter ~/.gz/fuel zwischengespeichert.
+PERSON_MESH = ("https://fuel.gazebosim.org/1.0/openrobotics/models/"
+               "walking person/3/files/meshes/walking.dae")
+# Drehung des Meshes, damit die Person in Modell-+x-Richtung läuft
+PERSON_MESH_YAW = math.pi / 2
+
+
+def pose_publisher():
+    """Ground-Truth-Pose auf /model/<name>/pose (für Auswertung und Orakel)."""
+    return """
+      <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>false</publish_link_pose>
+        <publish_model_pose>true</publish_model_pose>
+        <use_pose_vector_msg>true</use_pose_vector_msg>
+        <update_frequency>10</update_frequency>
+      </plugin>"""
+
+
+def blue_bag():
+    """Blauer Rucksack, ca. 0,3 x 0,2 x 0,5 m – hoch genug für den Lidar (0,27 m).
+
+    Lokal: +x = Vorderseite mit Fronttasche, Träger hinten.
+    """
+    blue, dark, black, grey = "0.1 0.3 0.85", "0.05 0.17 0.55", "0.05 0.05 0.07", "0.75 0.75 0.75"
+    b = part("body", (0, 0, 0.17, 0, 0, 0), box_geom(0.18, 0.3, 0.34), blue)
+    b += part("top", (0, 0, 0.34, 0, 1.5708, 0), cyl_geom(0.15, 0.18), blue)
+    b += part("pocket", (0.115, 0, 0.13, 0, 0, 0), box_geom(0.06, 0.24, 0.18), dark, collide=False)
+    b += part("pocket_top", (0.115, 0, 0.22, 0, 1.5708, 0), cyl_geom(0.12, 0.06), dark, collide=False)
+    b += part("zipper", (0.0, 0, 0.47, 0, 0, 0), box_geom(0.185, 0.012, 0.012), grey, collide=False)
+    b += part("handle", (-0.02, 0, 0.51, 0, 0, 0), box_geom(0.03, 0.1, 0.025), black, collide=False)
+    for side in (-1, 1):
+        b += part(f"strap{side}", (-0.1, side * 0.08, 0.25, 0, 0, 0),
+                  box_geom(0.025, 0.055, 0.38), black, collide=False)
+    _pending.clear()  # nicht in die Karte
+    x, y = BAG_START
+    return f"""
+    <model name="blue_bag">
+      <pose>{x} {y} 0.005 0 0 0.6</pose>
+      <link name="link">
+        <inertial>
+          <pose>0 0 0.2 0 0 0</pose>
+          <mass>3.0</mass>
+          <inertia><ixx>0.05</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.05</iyy><iyz>0</iyz><izz>0.04</izz></inertia>
+        </inertial>
+{b}      </link>{pose_publisher()}
+    </model>"""
+
+
+def person():
+    """Person, die einen festen Pfad abläuft.
+
+    Bewegt wird sie von ros/vlm/person_walker.py über das VelocityControl-
+    System (Twist auf /model/person/cmd_vel). Kollision: Zylinder ohne
+    Reibung; der Lidar (0,27 m) sieht die Beine.
+    """
+    x, y = PERSON_PARK
+    return f"""
+    <model name="person">
+      <pose>{x} {y} 0.01 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <pose>0 0 0.9 0 0 0</pose>
+          <mass>70.0</mass>
+          <inertia><ixx>20</ixx><ixy>0</ixy><ixz>0</ixz><iyy>20</iyy><iyz>0</iyz><izz>4</izz></inertia>
+        </inertial>
+        <gravity>false</gravity>
+        <collision name="body">
+          <pose>0 0 0.88 0 0 0</pose>
+          {cyl_geom(0.22, 1.72)}
+          <surface><friction><ode><mu>0</mu><mu2>0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 -0.01 0 0 {PERSON_MESH_YAW}</pose>
+          <geometry><mesh><uri>{PERSON_MESH}</uri></mesh></geometry>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+        <topic>/model/person/cmd_vel</topic>
+      </plugin>{pose_publisher()}
+    </model>"""
+
+
 def lights():
     s = ""
     for i, (x, y) in enumerate([(-6, -4), (-1, -4), (-6, 0.5), (-1, 0.5), (6.5, 1),
@@ -418,7 +509,7 @@ def main():
     template = (ROOT / "tools" / "office_template.sdf").read_text()
     sdf = (template
            .replace("<!--@WALLS@-->", walls() + floors())
-           .replace("<!--@FURNITURE@-->", furniture())
+           .replace("<!--@FURNITURE@-->", furniture() + blue_bag() + person())
            .replace("<!--@LIGHTS@-->", lights()))
     OUT.write_text(sdf)
     print(f"geschrieben: {OUT.relative_to(ROOT)}")

@@ -2,3 +2,6 @@
 *.log
 .pixi/
 __pycache__/
+
+# Aufgezeichnete Episoden (VLA-Daten)
+data/
